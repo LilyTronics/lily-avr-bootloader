@@ -21,11 +21,11 @@ class Bootloader {
         volatile uint8_t* m_led_port;
         uint8_t m_led_mode;
         uint16_t m_led_counter;
-        uint32_t m_led_blink_counts;
-        uint32_t m_led_flash_on_counts;
-        uint32_t m_led_flash_off_counts;
+        uint16_t m_led_blink_counts;
+        uint16_t m_led_flash_on_counts;
+        uint16_t m_led_flash_off_counts;
         uint16_t m_uart_timeout_counter;
-        uint32_t m_uart_timeout_counts;
+        uint16_t m_uart_timeout_counts;
 
         void process_led(void);
         void run_main_application(void);
@@ -34,12 +34,12 @@ class Bootloader {
 
 // Timer 0 (8 bit) is used for:
 // - blinking/flashing LED
-#define TIMER_PRESCALER         256L
-#define TIMER_OVERFLOW          256L
+#define TIMER_PRESCALER         256
+#define TIMER_OVERFLOW          256
 #define TIMER_DIV               TIMER_PRESCALER / TIMER_OVERFLOW
 
-#define DIV_2HZ_ON_OFF          4L
-#define DIV_1HZ_ON              8L
+#define DIV_2HZ_ON_OFF          4
+#define DIV_1HZ_ON              8
 
 // LED definitions
 #define LED_MODE_BLINK          1

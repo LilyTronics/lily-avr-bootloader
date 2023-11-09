@@ -25,7 +25,6 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 
     m_uart_timeout_counts = (sys_clock / TIMER_DIV) * UART_TIME_OUT;
     m_uart_timeout_counter = 0;
-
 }
 
 

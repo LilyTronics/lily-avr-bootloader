@@ -8,7 +8,7 @@
 
 int main(void) {
     Bootloader bootloader(
-        16000000L,
+        16000000,
         PORTB5,
         &DDRB,
         &PORTB
