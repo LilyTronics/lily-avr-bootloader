@@ -22,6 +22,10 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 
     m_led_mode = LED_MODE_BLINK;
     m_led_counter = 0;
+
+    m_uart_timeout_counts = (sys_clock / TIMER_DIV) * UART_TIME_OUT;
+    m_uart_timeout_counter = 0;
+
 }
 
 
@@ -30,6 +34,11 @@ void Bootloader::process_events(void) {
         TIFR0 |= (1 << TOV0);
 
         m_led_counter++;
+        m_uart_timeout_counter++;
+
+        if (m_uart_timeout_counter >= m_uart_timeout_counts) {
+            run_main_application();
+        }
 
         process_led();
     }
@@ -51,4 +60,11 @@ void Bootloader::process_led(void) {
         *m_led_port |= (1 << m_led_pin);
         m_led_counter = 0;
     }
+}
+
+
+void Bootloader::run_main_application(void) {
+    *m_led_port &= ~(1 << m_led_pin);
+    // TODO: jump to main application
+    while (1);
 }

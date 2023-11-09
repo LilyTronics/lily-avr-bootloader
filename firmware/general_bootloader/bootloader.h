@@ -24,8 +24,11 @@ class Bootloader {
         uint32_t m_led_blink_counts;
         uint32_t m_led_flash_on_counts;
         uint32_t m_led_flash_off_counts;
+        uint16_t m_uart_timeout_counter;
+        uint32_t m_uart_timeout_counts;
 
         void process_led(void);
+        void run_main_application(void);
 };
 
 
@@ -45,5 +48,7 @@ class Bootloader {
 #define LED_BLINK_DIV           TIMER_DIV / DIV_2HZ_ON_OFF
 #define LED_FLASH_ON_DIV        TIMER_DIV / DIV_1HZ_ON
 
+// UART definitions
+#define UART_TIME_OUT           3
 
 #endif /* BOOTLOADER_H_ */
