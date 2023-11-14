@@ -5,6 +5,8 @@
 #ifndef BOOTLOADER_H_
 #define BOOTLOADER_H_
 
+#include "interfaces/interface.h"
+
 
 class Bootloader {
     public:
@@ -12,11 +14,14 @@ class Bootloader {
             uint32_t sys_clock,
             uint8_t led_pin,
             volatile uint8_t* led_ddr,
-            volatile uint8_t* led_port
+            volatile uint8_t* led_port,
+            Interface* interface
         );
         void process_events(void);
+        void process_command(void);
 
     private:
+        uint8_t m_is_bootloader_active;
         uint8_t m_led_pin;
         volatile uint8_t* m_led_port;
         uint8_t m_led_mode;
@@ -24,8 +29,9 @@ class Bootloader {
         uint16_t m_led_blink_counts;
         uint16_t m_led_flash_on_counts;
         uint16_t m_led_flash_off_counts;
-        uint16_t m_uart_timeout_counter;
-        uint16_t m_uart_timeout_counts;
+        uint16_t m_boot_timeout_counter;
+        uint16_t m_boot_timeout_counts;
+        Interface* m_interface;
 
         void process_led(void);
         void run_main_application(void);
@@ -34,6 +40,8 @@ class Bootloader {
 
 // Timer 0 (8 bit) is used for:
 // - blinking/flashing LED
+// - boot loader timeout
+// - interface timeout
 #define TIMER_PRESCALER         256
 #define TIMER_OVERFLOW          256
 #define TIMER_DIV               TIMER_PRESCALER / TIMER_OVERFLOW
@@ -48,7 +56,11 @@ class Bootloader {
 #define LED_BLINK_DIV           TIMER_DIV / DIV_2HZ_ON_OFF
 #define LED_FLASH_ON_DIV        TIMER_DIV / DIV_1HZ_ON
 
-// UART definitions
-#define UART_TIME_OUT           3
+// Boot timeout
+#define BOOT_TIME_OUT           3
+
+// Bootloader commands
+#define CMD_ACTIVATE            0x02
+#define CMD_DEACTIVATE          0x03
 
 #endif /* BOOTLOADER_H_ */
