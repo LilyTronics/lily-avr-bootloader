@@ -7,6 +7,8 @@
 #ifndef INTERFACE_H_
 #define INTERFACE_H_
 
+#include <avr/io.h>
+
 
 struct PacketData {
     uint8_t command;

@@ -5,6 +5,7 @@
 #ifndef BOOTLOADER_H_
 #define BOOTLOADER_H_
 
+#include <avr/io.h>
 #include "interfaces/interface.h"
 
 

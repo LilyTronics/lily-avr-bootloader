@@ -2,7 +2,6 @@
  * UART interface code.
  */
 
-#include <avr/io.h>
 #include "uart.h"
 
 

@@ -2,9 +2,7 @@
  * Bootloader code.
  */
 
-#include <avr/io.h>
 #include "bootloader.h"
-#include "interfaces/interface.h"
 
 
 Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* led_ddr,
