@@ -171,6 +171,12 @@
     <Compile Include="bootloader.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="fifo.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="fifo.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="interfaces\interface.h">
       <SubType>compile</SubType>
     </Compile>
