@@ -23,10 +23,15 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
     m_led_mode = LED_MODE_BLINK;
     m_led_counter = 0;
 
-    m_boot_timeout_counts = (sys_clock / TIMER_DIV) * BOOT_TIME_OUT;
+    m_boot_timeout_counts = (sys_clock / TIMER_DIV) * BOOT_TIMEOUT;
     m_boot_timeout_counter = 0;
 
+    m_com_timeout_counts = (sys_clock / TIMER_DIV) * COM_TIMEOUT;
+    m_com_timeout_counter = 0;
+
     m_interface = interface;
+
+    m_com_state = COM_STATE_IDLE;
 }
 
 
@@ -35,11 +40,16 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
  **********/
 
 void Bootloader::process_events(void) {
+    uint8_t data_byte;
+    static uint8_t command;
+    static uint16_t n_data_bytes;
+
     // Check timer overflow
     if (TIFR0 & (1 << TOV0)) {
         TIFR0 |= (1 << TOV0);
 
         m_led_counter++;
+        m_com_timeout_counter++;
 
         if (m_is_bootloader_active) {
             m_boot_timeout_counter = 0;
@@ -52,40 +62,87 @@ void Bootloader::process_events(void) {
         }
 
         process_led();
-        m_interface->increment_timeout_counter();
     }
 
-    if (m_interface->is_command_received()) {
-        process_command();
-        m_interface->clear_command_received();
+    if (m_com_state < COM_STATE_PROCESS) {
+        // Check for data from interface
+        if (m_interface->get_data_byte(data_byte)) {
+            m_com_timeout_counter = 0;
+
+            switch (m_com_state) {
+                case COM_STATE_IDLE:
+                    if (data_byte == START_OF_PACKET) {
+                        m_com_state++;
+                    }
+                    break;
+
+                case COM_STATE_COMMAND:
+                    command = data_byte;
+                    n_data_bytes = 0;
+                    m_com_state++;
+                    break;
+
+                case COM_STATE_COUNTER_HIGH:
+                    n_data_bytes = data_byte << 8;
+                    m_com_state++;
+                    break;
+
+                case COM_STATE_COUNTER_LOW:
+                    n_data_bytes += data_byte;
+                    m_com_state++;
+                    process_command(command, n_data_bytes);
+                    break;
+            }
+        }
+        else {
+            // No bytes received, check for timeout
+            if (m_com_timeout_counter >= m_com_timeout_counts) {
+                // Reset receiver state, to get back in sync with the host
+                m_com_state = COM_STATE_IDLE;
+                m_com_timeout_counter = 0;
+            }
+        }
     }
 }
 
 
-void Bootloader::process_command() {
-    PacketData packetData = m_interface->get_command_data();
+void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
+    uint8_t response_data[4];
+    uint8_t command_finished = 0;
 
-    switch (packetData.command) {
+    switch (command) {
         case CMD_ACTIVATE:
             m_led_mode = LED_MODE_FLASH_ON;
             m_led_counter = 0;
             m_is_bootloader_active = 1;
-            packetData.command = ~packetData.command;
-            packetData.n_data_bytes = 0;
-            m_interface->send_response(packetData);
+            response_data[0] = START_OF_PACKET;
+            response_data[1] = ~command;
+            response_data[2] = 0;
+            response_data[3] = 0;
+            command_finished = 1;
             break;
 
         case CMD_DEACTIVATE:
             m_led_mode = LED_MODE_BLINK;
             m_led_counter = 0;
             m_is_bootloader_active = 0;
-            packetData.command = ~packetData.command;
-            packetData.n_data_bytes = 0;
-            m_interface->send_response(packetData);
+            response_data[0] = START_OF_PACKET;
+            response_data[1] = ~command;
+            response_data[2] = 0;
+            response_data[3] = 0;
+            command_finished = 1;
             break;
 
+        default:
+            command_finished = 1;
+            break;
     }
 
+    if (command_finished) {
+        m_interface->send_response(response_data, 4);
+        m_com_state = COM_STATE_IDLE;
+        m_com_timeout_counter = 0;
+    }
 }
 
 

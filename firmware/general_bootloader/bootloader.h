@@ -19,7 +19,7 @@ class Bootloader {
             Interface* interface
         );
         void process_events(void);
-        void process_command(void);
+        void process_command(uint8_t command, uint16_t n_data_bytes);
 
     private:
         uint8_t m_is_bootloader_active;
@@ -32,8 +32,10 @@ class Bootloader {
         uint16_t m_led_flash_off_counts;
         uint16_t m_boot_timeout_counter;
         uint16_t m_boot_timeout_counts;
+        uint16_t m_com_timeout_counter;
+        uint16_t m_com_timeout_counts;
         Interface* m_interface;
-
+        uint8_t m_com_state;
         void process_led(void);
         void run_main_application(void);
 };
@@ -57,11 +59,21 @@ class Bootloader {
 #define LED_BLINK_DIV           TIMER_DIV / DIV_2HZ_ON_OFF
 #define LED_FLASH_ON_DIV        TIMER_DIV / DIV_1HZ_ON
 
-// Boot timeout
-#define BOOT_TIME_OUT           3
+// Timeouts
+#define BOOT_TIMEOUT            3
+#define COM_TIMEOUT             2
+
+// Communication states
+#define COM_STATE_IDLE          0
+#define COM_STATE_COMMAND       1
+#define COM_STATE_COUNTER_HIGH  2
+#define COM_STATE_COUNTER_LOW   3
+#define COM_STATE_PROCESS       4
 
 // Bootloader commands
+#define START_OF_PACKET         0x01
 #define CMD_ACTIVATE            0x02
 #define CMD_DEACTIVATE          0x03
+
 
 #endif /* BOOTLOADER_H_ */

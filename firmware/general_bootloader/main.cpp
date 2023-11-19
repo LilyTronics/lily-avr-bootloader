@@ -9,13 +9,10 @@
 
 #define SYS_CLOCK               16000000
 #define BAUD_RATE               115200
-#define UART_TIMEOUT            1
-#define UART_TIME_OUT_COUNTS    (SYS_CLOCK / TIMER_DIV) * UART_TIMEOUT
 
 
 int main(void) {
-    Uart uart;
-    uart.init(SYS_CLOCK, BAUD_RATE, UART_TIME_OUT_COUNTS);
+    Uart uart(SYS_CLOCK, BAUD_RATE);
 
     Bootloader bootloader(
         SYS_CLOCK,
