@@ -170,6 +170,5 @@ void Bootloader::process_led(void) {
 
 void Bootloader::run_main_application(void) {
     *m_led_port &= ~(1 << m_led_pin);
-    // TODO: jump to main application
-    while (1);
+    asm("JMP 0");
 }
