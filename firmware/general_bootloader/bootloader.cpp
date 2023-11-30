@@ -3,6 +3,14 @@
  */
 
 #include "bootloader.h"
+#include <avr/boot.h>
+#include <avr/interrupt.h>
+#include <avr/pgmspace.h>
+
+
+// Default program when flash is empty
+// start:  RJMP start   (endless loop)
+uint8_t default_prog[] = { 0xFF, 0xCF };
 
 
 Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* led_ddr,
@@ -32,6 +40,12 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
     m_interface = interface;
 
     m_com_state = COM_STATE_IDLE;
+
+    if (is_flash_empty()) {
+        // Program default prog
+        program_page(0, default_prog, 2);
+    }
+
 }
 
 
@@ -171,4 +185,53 @@ void Bootloader::process_led(void) {
 void Bootloader::run_main_application(void) {
     *m_led_port &= ~(1 << m_led_pin);
     asm("JMP 0");
+}
+
+
+uint8_t Bootloader::is_flash_empty(void) {
+    // Check first 8 bytes at least one of them should not be 0xFF when programmed
+    for (uint8_t i = 0; i < 8; i++) {
+        if (pgm_read_byte(i) != 0xFF) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+void Bootloader::program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count) {
+    uint8_t sreg = SREG;
+    cli();
+
+    eeprom_busy_wait();
+    boot_page_erase(page_address);
+    boot_spm_busy_wait();
+
+    // Page is filled per two bytes
+    for (uint16_t i = 0; i < SPM_PAGESIZE; i += 2) {
+        // Little-endian word, padding with empty data in case buffer is not a complete page
+        uint16_t data_word = 0;
+        if (data_count > 0) {
+            data_word |= *page_data++;
+            data_count--;
+            if (data_count > 0) {
+                data_word |= (*page_data++) << 8;
+                data_count--;
+            }
+            else {
+                data_word |= 0xFF00;
+            }
+        }
+        else {
+            data_word = 0xFFFF;
+        }
+        boot_page_fill(page_address + i, data_word);
+    }
+
+    boot_page_write(page_address);
+    boot_spm_busy_wait();
+    boot_rww_enable();
+
+    SREG = sreg;
 }

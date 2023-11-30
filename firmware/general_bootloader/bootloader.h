@@ -38,6 +38,9 @@ class Bootloader {
         uint8_t m_com_state;
         void process_led(void);
         void run_main_application(void);
+        void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count);
+        uint8_t is_flash_empty(void);
+
 };
 
 
