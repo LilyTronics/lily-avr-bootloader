@@ -44,6 +44,9 @@ class Bootloader {
 };
 
 
+// The only place where the bootloader version should be defined
+#define BOOTLOADER_VERSION      1
+
 // Timer 0 (8 bit) is used for:
 // - blinking/flashing LED
 // - boot loader timeout
@@ -66,6 +69,9 @@ class Bootloader {
 #define BOOT_TIMEOUT            3
 #define COM_TIMEOUT             2
 
+// Maximum size of the packet to send
+#define MAX_PACKET_SIZE         5
+
 // Communication states
 #define COM_STATE_IDLE          0
 #define COM_STATE_COMMAND       1
@@ -77,6 +83,6 @@ class Bootloader {
 #define START_OF_PACKET         0x01
 #define CMD_ACTIVATE            0x02
 #define CMD_DEACTIVATE          0x03
-
+#define CMD_VERSION             0x04
 
 #endif /* BOOTLOADER_H_ */

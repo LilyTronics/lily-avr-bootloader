@@ -121,16 +121,17 @@ void Bootloader::process_events(void) {
 
 
 void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
-    uint8_t response_data[4];
+    uint8_t response_data[MAX_PACKET_SIZE];
     uint8_t command_finished = 0;
+
+    response_data[0] = START_OF_PACKET;
+    response_data[1] = ~command;
 
     switch (command) {
         case CMD_ACTIVATE:
             m_led_mode = LED_MODE_FLASH_ON;
             m_led_counter = 0;
             m_is_bootloader_active = 1;
-            response_data[0] = START_OF_PACKET;
-            response_data[1] = ~command;
             response_data[2] = 0;
             response_data[3] = 0;
             command_finished = 1;
@@ -140,11 +141,18 @@ void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
             m_led_mode = LED_MODE_BLINK;
             m_led_counter = 0;
             m_is_bootloader_active = 0;
-            response_data[0] = START_OF_PACKET;
-            response_data[1] = ~command;
             response_data[2] = 0;
             response_data[3] = 0;
             command_finished = 1;
+            break;
+
+        case CMD_VERSION:
+            if (m_is_bootloader_active) {
+                response_data[2] = 0;
+                response_data[3] = 1;
+                response_data[4] = BOOTLOADER_VERSION;
+                command_finished = 1;
+            }
             break;
 
         default:
@@ -153,7 +161,10 @@ void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
     }
 
     if (command_finished) {
-        m_interface->send_response(response_data, 4);
+        m_interface->send_response(response_data);
+    }
+
+    if (command_finished || !m_is_bootloader_active) {
         m_com_state = COM_STATE_IDLE;
         m_com_timeout_counter = 0;
     }
