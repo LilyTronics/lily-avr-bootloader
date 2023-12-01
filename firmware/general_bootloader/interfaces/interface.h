@@ -16,7 +16,7 @@ class Interface {
             data_byte = 0;
             return 0;
         }
-        virtual void send_response(uint8_t response_data[], uint8_t size) {}
+        virtual void send_response(uint8_t response_data[]) {}
 
 };
 

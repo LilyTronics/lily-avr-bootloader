@@ -13,7 +13,7 @@ class Uart : public Interface {
     public:
         Uart(uint32_t sys_clock, uint32_t baud_rate);
         uint8_t get_data_byte(uint8_t& data_byte);
-        void send_response(uint8_t response_data[], uint8_t size);
+        void send_response(uint8_t response_data[]);
 
 };
 
