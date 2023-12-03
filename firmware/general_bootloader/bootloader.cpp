@@ -3,9 +3,11 @@
  */
 
 #include "bootloader.h"
+#include "device_info.h"
 #include <avr/boot.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
+#include <string.h>
 
 
 // Default program when flash is empty
@@ -151,6 +153,18 @@ void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
                 response_data[2] = 0;
                 response_data[3] = 1;
                 response_data[4] = BOOTLOADER_VERSION;
+                command_finished = 1;
+            }
+            break;
+
+        case CMD_DEVICE_NAME:
+            if (m_is_bootloader_active) {
+                uint16_t data_size = strlen(DEVICE_NAME);
+                response_data[2] = HIGH(data_size);
+                response_data[3] = LOW(data_size);
+                for (uint16_t i = 0; i < data_size; i++) {
+                    response_data[4 + i] = DEVICE_NAME[0 + i];
+                }
                 command_finished = 1;
             }
             break;
