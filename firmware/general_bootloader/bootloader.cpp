@@ -169,6 +169,18 @@ void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
             }
             break;
 
+        case CMD_MODULE_NAME:
+            if (m_is_bootloader_active) {
+                uint16_t data_size = strlen(DEVICE_NAME);
+                response_data[2] = HIGH(data_size);
+                response_data[3] = LOW(data_size);
+                for (uint16_t i = 0; i < data_size; i++) {
+                    response_data[4 + i] = DEVICE_NAME[0 + i];
+                }
+                command_finished = 1;
+            }
+            break;
+
         default:
             command_finished = 1;
             break;

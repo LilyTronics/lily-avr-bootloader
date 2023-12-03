@@ -70,7 +70,7 @@ class Bootloader {
 #define COM_TIMEOUT             2
 
 // Maximum size of the packet to send
-#define MAX_PACKET_SIZE         14
+#define MAX_PACKET_SIZE         20
 
 // Communication states
 #define COM_STATE_IDLE          0
@@ -86,6 +86,7 @@ class Bootloader {
 #define CMD_VERSION             0x04
 
 #define CMD_DEVICE_NAME         0x10
+#define CMD_MODULE_NAME         0x11
 
 #define LOW(x)                  (uint8_t) (x & 0xFF)
 #define HIGH(x)                 (uint8_t) ((x >> 8) & 0xFF)
