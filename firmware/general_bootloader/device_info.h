@@ -12,5 +12,6 @@
 #define BAUD_RATE               115200
 
 const char DEVICE_NAME[] = "ATmega328P";
+const char MODULE_NAME[] = "Arduino Uno R3";
 
 #endif /* DEVICE_INFO_H_ */
