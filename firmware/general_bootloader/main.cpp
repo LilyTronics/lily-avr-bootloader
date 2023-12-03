@@ -15,10 +15,7 @@
 #include <avr/io.h>
 #include "interfaces/uart.h"
 #include "bootloader.h"
-
-
-#define SYS_CLOCK               16000000
-#define BAUD_RATE               115200
+#include "device_info.h"
 
 
 int main(void) {

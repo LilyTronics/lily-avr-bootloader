@@ -183,6 +183,9 @@
     <Compile Include="bootloader.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="device_info.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="interfaces\interface.h">
       <SubType>compile</SubType>
     </Compile>
