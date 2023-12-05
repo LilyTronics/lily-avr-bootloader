@@ -39,6 +39,14 @@ uint8_t get_version(void);
 uint8_t get_device_name(void);
 uint8_t get_module_name(void);
 
+uint8_t get_boot_size(void);
+uint8_t get_flash_size(void);
+uint8_t get_page_size(void);
+
+uint8_t set_page_address(void);
+uint8_t read_page(void);
+uint8_t write_page(void);
+
 
 // Bootloader command entry
 typedef struct {
@@ -47,15 +55,23 @@ typedef struct {
 } COMMAND_ENTRY;
 
 COMMAND_ENTRY m_commands[] = {
-    { 0x02, activate        },          // Activate the boot loader
+    { 0x02, activate         },          // Activate the boot loader
 
     // All command below here require an activated bootloader
 
-    { 0x03, deactivate      },          // Deactivate the boot loader
-    { 0x04, get_version     },          // Get the bootloader version
+    { 0x03, deactivate       },         // Deactivate the boot loader
+    { 0x04, get_version      },         // Get the bootloader version
 
-    { 0x10, get_device_name },          // Get the device name
-    { 0x11, get_module_name },          // Get the module name
+    { 0x10, get_device_name  },         // Get the device name
+    { 0x11, get_module_name  },         // Get the module name
+
+    { 0x20, get_boot_size    },         // Get the size of the flash in kB
+    { 0x21, get_flash_size   },         // Get the size of the boot section in bytes
+    { 0x22, get_page_size    },         // Get the size of the page in bytes
+
+    { 0x30, set_page_address },         // Sets the page address
+    { 0x31, read_page        },         // Reads data from the page
+    { 0x32, write_page       },         // Write data to the page
 
     { 0x00, 0               }           // End of list
 };
@@ -315,4 +331,34 @@ uint8_t get_module_name(void) {
         m_tx_data[4 + i] = MODULE_NAME[0 + i];
     }
     return 1;
+}
+
+
+uint8_t get_boot_size(void) {
+    return 0;
+}
+
+
+uint8_t get_flash_size(void) {
+    return 0;
+}
+
+
+uint8_t get_page_size(void) {
+    return 0;
+}
+
+
+uint8_t set_page_address(void) {
+    return 0;
+}
+
+
+uint8_t read_page(void) {
+    return 0;
+}
+
+
+uint8_t write_page(void) {
+    return 0;
 }
