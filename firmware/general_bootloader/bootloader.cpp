@@ -10,6 +10,56 @@
 #include <string.h>
 
 
+uint8_t m_led_pin;
+volatile uint8_t* m_led_port;
+uint16_t m_led_blink_counts;
+uint16_t m_led_flash_on_counts;
+uint16_t m_led_flash_off_counts;
+uint8_t m_is_bootloader_active;
+uint8_t m_led_mode;
+uint16_t m_led_counter;
+uint16_t m_boot_timeout_counts;
+uint16_t m_boot_timeout_counter;
+uint16_t m_com_timeout_counts;
+uint16_t m_com_timeout_counter;
+Interface* m_interface;
+uint8_t m_rx_data[MAX_PACKET_SIZE];
+uint8_t m_rx_index;
+uint8_t m_tx_data[MAX_PACKET_SIZE];
+
+void process_led(void);
+uint8_t is_flash_empty(void);
+void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count);
+void run_main_application(void);
+
+// Command functions
+uint8_t activate(void);
+uint8_t deactivate(void);
+uint8_t get_version(void);
+uint8_t get_device_name(void);
+uint8_t get_module_name(void);
+
+
+// Bootloader command entry
+typedef struct {
+    uint8_t command;
+    uint8_t (*function)(void);
+} COMMAND_ENTRY;
+
+COMMAND_ENTRY m_commands[] = {
+    { 0x02, activate        },          // Activate the boot loader
+
+    // All command below here require an activated bootloader
+
+    { 0x03, deactivate      },          // Deactivate the boot loader
+    { 0x04, get_version     },          // Get the bootloader version
+
+    { 0x10, get_device_name },          // Get the device name
+    { 0x11, get_module_name },          // Get the module name
+
+    { 0x00, 0               }           // End of list
+};
+
 // Default program when flash is empty
 // start:  RJMP start   (endless loop)
 uint8_t default_prog[] = { 0xFF, 0xCF };
@@ -41,7 +91,7 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 
     m_interface = interface;
 
-    m_com_state = COM_STATE_IDLE;
+    m_rx_index = 0;
 
     if (is_flash_empty()) {
         // Program default prog
@@ -57,8 +107,9 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 
 void Bootloader::process_events(void) {
     uint8_t data_byte;
-    static uint8_t command;
-    static uint16_t n_data_bytes;
+    uint16_t size;
+    COMMAND_ENTRY *p;
+    uint8_t result = 0;
 
     // Check timer overflow
     if (TIFR0 & (1 << TOV0)) {
@@ -80,120 +131,64 @@ void Bootloader::process_events(void) {
         process_led();
     }
 
-    if (m_com_state < COM_STATE_PROCESS) {
-        // Check for data from interface
-        if (m_interface->get_data_byte(data_byte)) {
+    // Check for data from interface
+    if (m_interface->get_data_byte(data_byte)) {
+        // Check for valid data:
+        // - no data yet and start of packet is received
+        // - already data available
+        if ((m_rx_index == 0 && data_byte == START_OF_PACKET) || m_rx_index > 0) {
             m_com_timeout_counter = 0;
+            m_rx_data[m_rx_index] = data_byte;
+            m_rx_index++;
 
-            switch (m_com_state) {
-                case COM_STATE_IDLE:
-                    if (data_byte == START_OF_PACKET) {
-                        m_com_state++;
+            // Check if the packet is complete
+            if (m_rx_index >= 4) {
+                size = (uint16_t) ((m_rx_data[2] << 8) + m_rx_data[3] + 4);
+                if (m_rx_index == size) {
+                    // Complete package received
+
+                    // Prepare response
+                    m_tx_data[0] = START_OF_PACKET;
+                    m_tx_data[1] = ~m_rx_data[1];
+                    m_tx_data[2] = 0;
+                    m_tx_data[3] = 0;
+
+                    // Process command
+                    p = &m_commands[0];
+                    if (m_rx_data[1] < 3 || m_is_bootloader_active) {
+                        while (p->command > 0) {
+                            if (p->command == m_rx_data[1]) {
+                                result = p->function();
+                                break;
+                            }
+                            p++;
+                        }
                     }
-                    break;
 
-                case COM_STATE_COMMAND:
-                    command = data_byte;
-                    n_data_bytes = 0;
-                    m_com_state++;
-                    break;
+                    // Command not found or error from function, send error
+                    if (p->command == 0 || result == 0) {
+                        m_tx_data[1] = ERROR_CODE;
+                    }
 
-                case COM_STATE_COUNTER_HIGH:
-                    n_data_bytes = data_byte << 8;
-                    m_com_state++;
-                    break;
+                    // Send response
+                    m_interface->send_response(m_tx_data);
 
-                case COM_STATE_COUNTER_LOW:
-                    n_data_bytes += data_byte;
-                    m_com_state++;
-                    process_command(command, n_data_bytes);
-                    break;
-            }
-        }
-        else {
-            // No bytes received, check for timeout
-            if (m_com_timeout_counter >= m_com_timeout_counts) {
-                // Reset receiver state, to get back in sync with the host
-                m_com_state = COM_STATE_IDLE;
-                m_com_timeout_counter = 0;
+                    // Reset and wait for new data
+                    m_rx_index = 0;
+                    m_com_timeout_counter = 0;
+                }
             }
         }
     }
-}
-
-
-void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
-    uint8_t response_data[MAX_PACKET_SIZE];
-    uint8_t command_finished = 0;
-
-    response_data[0] = START_OF_PACKET;
-    response_data[1] = ~command;
-
-    switch (command) {
-        case CMD_ACTIVATE:
-            m_led_mode = LED_MODE_FLASH_ON;
-            m_led_counter = 0;
-            m_is_bootloader_active = 1;
-            response_data[2] = 0;
-            response_data[3] = 0;
-            command_finished = 1;
-            break;
-
-        case CMD_DEACTIVATE:
-            m_led_mode = LED_MODE_BLINK;
-            m_led_counter = 0;
-            m_is_bootloader_active = 0;
-            response_data[2] = 0;
-            response_data[3] = 0;
-            command_finished = 1;
-            break;
-
-        case CMD_VERSION:
-            if (m_is_bootloader_active) {
-                response_data[2] = 0;
-                response_data[3] = 1;
-                response_data[4] = BOOTLOADER_VERSION;
-                command_finished = 1;
-            }
-            break;
-
-        case CMD_DEVICE_NAME:
-            if (m_is_bootloader_active) {
-                uint16_t data_size = strlen(DEVICE_NAME);
-                response_data[2] = HIGH(data_size);
-                response_data[3] = LOW(data_size);
-                for (uint16_t i = 0; i < data_size; i++) {
-                    response_data[4 + i] = DEVICE_NAME[0 + i];
-                }
-                command_finished = 1;
-            }
-            break;
-
-        case CMD_MODULE_NAME:
-            if (m_is_bootloader_active) {
-                uint16_t data_size = strlen(MODULE_NAME);
-                response_data[2] = HIGH(data_size);
-                response_data[3] = LOW(data_size);
-                for (uint16_t i = 0; i < data_size; i++) {
-                    response_data[4 + i] = MODULE_NAME[0 + i];
-                }
-                command_finished = 1;
-            }
-            break;
-
-        default:
-            command_finished = 1;
-            break;
+    else {
+        // No bytes received, check for timeout
+        if (m_com_timeout_counter >= m_com_timeout_counts) {
+            // Reset receiver index, to get back in sync with the host
+            m_rx_index = 0;
+            m_com_timeout_counter = 0;
+        }
     }
 
-    if (command_finished) {
-        m_interface->send_response(response_data);
-    }
-
-    if (command_finished || !m_is_bootloader_active) {
-        m_com_state = COM_STATE_IDLE;
-        m_com_timeout_counter = 0;
-    }
 }
 
 
@@ -201,7 +196,7 @@ void Bootloader::process_command(uint8_t command, uint16_t n_data_bytes) {
  * Private *
  ***********/
 
-void Bootloader::process_led(void) {
+void process_led(void) {
     if (m_led_mode == LED_MODE_BLINK && m_led_counter == m_led_blink_counts) {
         m_led_counter = 0;
         *m_led_port ^= (1 << m_led_pin);
@@ -219,13 +214,13 @@ void Bootloader::process_led(void) {
 }
 
 
-void Bootloader::run_main_application(void) {
+void run_main_application(void) {
     *m_led_port &= ~(1 << m_led_pin);
     asm("JMP 0");
 }
 
 
-uint8_t Bootloader::is_flash_empty(void) {
+uint8_t is_flash_empty(void) {
     // Check first 8 bytes at least one of them should not be 0xFF when programmed
     for (uint8_t i = 0; i < 8; i++) {
         if (pgm_read_byte(i) != 0xFF) {
@@ -237,7 +232,7 @@ uint8_t Bootloader::is_flash_empty(void) {
 }
 
 
-void Bootloader::program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count) {
+void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count) {
     uint8_t sreg = SREG;
     cli();
 
@@ -271,4 +266,53 @@ void Bootloader::program_page(uint32_t page_address, uint8_t* page_data, uint8_t
     boot_rww_enable();
 
     SREG = sreg;
+}
+
+
+/*********************
+ * Command functions *
+ *********************/
+
+uint8_t activate(void) {
+    m_led_mode = LED_MODE_FLASH_ON;
+    m_led_counter = 0;
+    m_is_bootloader_active = 1;
+    return 1;
+}
+
+
+uint8_t deactivate(void) {
+    m_led_mode = LED_MODE_BLINK;
+    m_led_counter = 0;
+    m_is_bootloader_active = 0;
+    return 1;
+}
+
+
+uint8_t get_version(void) {
+    m_tx_data[3] = 1;
+    m_tx_data[4] = BOOTLOADER_VERSION;
+    return 1;
+}
+
+
+uint8_t get_device_name(void) {
+    uint16_t data_size = strlen(DEVICE_NAME);
+    m_tx_data[2] = HIGH(data_size);
+    m_tx_data[3] = LOW(data_size);
+    for (uint16_t i = 0; i < data_size; i++) {
+        m_tx_data[4 + i] = DEVICE_NAME[0 + i];
+    }
+    return 1;
+}
+
+
+uint8_t get_module_name(void) {
+    uint16_t data_size = strlen(MODULE_NAME);
+    m_tx_data[2] = HIGH(data_size);
+    m_tx_data[3] = LOW(data_size);
+    for (uint16_t i = 0; i < data_size; i++) {
+        m_tx_data[4 + i] = MODULE_NAME[0 + i];
+    }
+    return 1;
 }
