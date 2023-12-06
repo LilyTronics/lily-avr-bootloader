@@ -333,7 +333,10 @@ uint8_t get_module_name(void) {
 
 
 uint8_t get_boot_size(void) {
-    return 0;
+    m_tx_data[3] = 2;
+    m_tx_data[4] = HIGH(BOOT_SIZE);
+    m_tx_data[5] = LOW(BOOT_SIZE);
+    return 1;
 }
 
 
