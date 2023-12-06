@@ -349,7 +349,10 @@ uint8_t get_flash_size(void) {
 
 
 uint8_t get_page_size(void) {
-    return 0;
+     m_tx_data[3] = 2;
+     m_tx_data[4] = HIGH(PAGE_SIZE);
+     m_tx_data[5] = LOW(PAGE_SIZE);
+     return 1;
 }
 
 
