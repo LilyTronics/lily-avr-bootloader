@@ -204,7 +204,6 @@ void Bootloader::process_events(void) {
             m_com_timeout_counter = 0;
         }
     }
-
 }
 
 
@@ -243,7 +242,6 @@ uint8_t is_flash_empty(void) {
             return 0;
         }
     }
-
     return 1;
 }
 
@@ -257,7 +255,7 @@ void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count)
     boot_spm_busy_wait();
 
     // Page is filled per two bytes
-    for (uint16_t i = 0; i < SPM_PAGESIZE; i += 2) {
+    for (uint16_t i = 0; i < PAGE_SIZE; i += 2) {
         // Little-endian word, padding with empty data in case buffer is not a complete page
         uint16_t data_word = 0;
         if (data_count > 0) {
