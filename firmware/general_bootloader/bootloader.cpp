@@ -341,7 +341,10 @@ uint8_t get_boot_size(void) {
 
 
 uint8_t get_flash_size(void) {
-    return 0;
+    m_tx_data[3] = 2;
+    m_tx_data[4] = HIGH(FLASH_SIZE);
+    m_tx_data[5] = LOW(FLASH_SIZE);
+    return 1;
 }
 
 
