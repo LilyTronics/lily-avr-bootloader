@@ -23,9 +23,10 @@ uint16_t m_boot_timeout_counter;
 uint16_t m_com_timeout_counts;
 uint16_t m_com_timeout_counter;
 Interface* m_interface;
-uint8_t m_rx_data[MAX_PACKET_SIZE];
+uint8_t m_rx_data[PAGE_SIZE + 4];
 uint8_t m_rx_index;
-uint8_t m_tx_data[MAX_PACKET_SIZE];
+uint8_t m_tx_data[PAGE_SIZE + 4];
+uint32_t m_active_page_address;
 
 void process_led(void);
 uint8_t is_flash_empty(void);
@@ -108,6 +109,8 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
     m_interface = interface;
 
     m_rx_index = 0;
+
+    m_active_page_address = 0;
 
     if (is_flash_empty()) {
         // Program default prog
@@ -357,7 +360,13 @@ uint8_t get_page_size(void) {
 
 
 uint8_t set_page_address(void) {
-    return 0;
+    m_active_page_address = (
+        ((uint32_t) m_rx_data[4] << 24) +
+        ((uint32_t) m_rx_data[5] << 16) +
+        ((uint32_t) m_rx_data[6] <<  8) +
+         (uint32_t) m_rx_data[7]
+    );
+    return 1;
 }
 
 

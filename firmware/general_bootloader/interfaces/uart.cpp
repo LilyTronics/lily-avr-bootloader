@@ -26,7 +26,11 @@ uint8_t Uart::get_data_byte(uint8_t& data_byte) {
 
 
 void Uart::send_response(uint8_t response_data[]) {
-    uint16_t size = (uint16_t) ((response_data[2] << 8) + response_data[3] + 4);
+    uint16_t size = (
+        ((uint16_t) response_data[2] << 8) +
+         (uint16_t) response_data[3] +
+         4
+    );
 
     for (uint8_t i = 0; i < size; i++) {
         while (!(UCSR0A & (1 << UDRE0)));        UDR0 = response_data[i];    }

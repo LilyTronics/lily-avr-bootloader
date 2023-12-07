@@ -51,7 +51,6 @@ class Bootloader {
 #define BOOT_TIMEOUT            3
 #define COM_TIMEOUT             2
 
-#define MAX_PACKET_SIZE         20
 #define START_OF_PACKET         0x01
 #define ERROR_CODE              0xFF
 
