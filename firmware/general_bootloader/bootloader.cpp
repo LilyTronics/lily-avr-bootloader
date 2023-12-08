@@ -30,7 +30,7 @@ uint32_t m_active_page_address;
 
 void process_led(void);
 uint8_t is_flash_empty(void);
-void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count);
+void program_page(uint8_t* page_data, uint8_t data_count, uint8_t offset);
 void run_main_application(void);
 
 // Command functions
@@ -114,7 +114,7 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 
     if (is_flash_empty()) {
         // Program default prog
-        program_page(0, default_prog, 2);
+        program_page(default_prog, 2, 0);
     }
 
 }
@@ -249,14 +249,15 @@ uint8_t is_flash_empty(void) {
 }
 
 
-void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count) {
+void program_page(uint8_t* page_data, uint8_t data_count, uint8_t offset) {
     uint8_t sreg = SREG;
     cli();
 
     eeprom_busy_wait();
-    boot_page_erase(page_address);
+    boot_page_erase(m_active_page_address);
     boot_spm_busy_wait();
 
+    page_data += offset;
     // Page is filled per two bytes
     for (uint16_t i = 0; i < PAGE_SIZE; i += 2) {
         // Little-endian word, padding with empty data in case buffer is not a complete page
@@ -275,10 +276,10 @@ void program_page(uint32_t page_address, uint8_t* page_data, uint8_t data_count)
         else {
             data_word = 0xFFFF;
         }
-        boot_page_fill(page_address + i, data_word);
+        boot_page_fill(m_active_page_address + i, data_word);
     }
 
-    boot_page_write(page_address);
+    boot_page_write(m_active_page_address);
     boot_spm_busy_wait();
     boot_rww_enable();
 
@@ -294,6 +295,7 @@ uint8_t activate(void) {
     m_led_mode = LED_MODE_FLASH_ON;
     m_led_counter = 0;
     m_is_bootloader_active = 1;
+    m_boot_timeout_counter = 0;
     return 1;
 }
 
@@ -302,6 +304,7 @@ uint8_t deactivate(void) {
     m_led_mode = LED_MODE_BLINK;
     m_led_counter = 0;
     m_is_bootloader_active = 0;
+    m_boot_timeout_counter = 0;
     return 1;
 }
 
@@ -371,10 +374,20 @@ uint8_t set_page_address(void) {
 
 
 uint8_t read_page(void) {
-    return 0;
+    m_tx_data[2] = HIGH(PAGE_SIZE);
+    m_tx_data[3] = LOW(PAGE_SIZE);
+    for (uint16_t i = 0; i < PAGE_SIZE; i++) {
+        m_tx_data[4 + i] = pgm_read_byte(m_active_page_address + i);
+    }
+    return 1;
 }
 
 
 uint8_t write_page(void) {
-    return 0;
+    uint16_t data_count = (
+        ((uint16_t) m_rx_data[6] <<  8) +
+         (uint16_t) m_rx_data[7]
+    );
+    program_page(m_rx_data, data_count, 4);
+    return 1;
 }
