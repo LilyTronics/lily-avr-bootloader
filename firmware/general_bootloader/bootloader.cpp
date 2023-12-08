@@ -385,8 +385,8 @@ uint8_t read_page(void) {
 
 uint8_t write_page(void) {
     uint16_t data_count = (
-        ((uint16_t) m_rx_data[6] <<  8) +
-         (uint16_t) m_rx_data[7]
+        ((uint16_t) m_rx_data[2] <<  8) +
+         (uint16_t) m_rx_data[3]
     );
     program_page(m_rx_data, data_count, 4);
     return 1;
