@@ -12,8 +12,8 @@ class ViewMain(wx.Frame):
     _SPACE = 10
     _LABEL_WIDTH = 100
 
-    def __init__(self):
-        super().__init__(None, wx.ID_ANY, 'AVR Bootloader', style=self._WINDOW_STYLE)
+    def __init__(self, title):
+        super().__init__(None, wx.ID_ANY, title, style=self._WINDOW_STYLE)
         panel = wx.Panel(self, wx.ID_ANY)
 
         box = wx.BoxSizer(wx.VERTICAL)
@@ -103,7 +103,7 @@ if __name__ == '__main__':
 
     app = wx.App(redirect=False)
 
-    frame = ViewMain()
+    frame = ViewMain('ViewMain Test')
     frame.Show()
 
     app.MainLoop()
