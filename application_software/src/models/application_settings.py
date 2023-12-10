@@ -55,10 +55,6 @@ class ApplicationSettings(object):
 
     def get_main_window_position(self): return self._get_value('main_window', 'position', [-1, -1])
     def store_main_window_position(self, value): self._store_value('main_window', 'position', value)
-    def get_main_window_size(self): return self._get_value('main_window', 'size', [-1, -1])
-    def store_main_window_size(self, value): self._store_value('main_window', 'size', value)
-    def get_main_window_maximized(self): return self._get_value('main_window', 'maximized', False)
-    def store_main_window_maximized(self, value): self._store_value('main_window', 'maximized', value)
 
     ######################
     # Interface settings #
@@ -109,14 +105,6 @@ if __name__ == '__main__':
     _test_setting('Main window position',
                   app_settings.get_main_window_position,
                   app_settings.store_main_window_position)
-
-    _test_setting('Main window size',
-                  app_settings.get_main_window_size,
-                  app_settings.store_main_window_size)
-
-    _test_setting('Main window maximized',
-                  app_settings.get_main_window_maximized,
-                  app_settings.store_main_window_maximized)
 
     _test_setting('Interface port',
                   app_settings.get_interface_port,
