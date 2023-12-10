@@ -28,6 +28,10 @@ def get_available_serial_ports():
     return ports
 
 
+def get_available_baud_rates():
+    return [2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 76800, 115200, 230400, 250000, 500000, 1000000]
+
+
 def _check_serial_port(lock_object, port_name, port_list):
     p = None
     try:
