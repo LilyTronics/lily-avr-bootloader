@@ -24,6 +24,10 @@ class ViewMain(wx.Frame):
         panel.SetSizer(box)
         self.SetInitialSize(self._INIT_SIZE)
 
+    ###########
+    # Private #
+    ###########
+
     def _create_interface_controls(self, parent):
         lbl_port = wx.StaticText(parent, wx.ID_ANY, 'Serial port:', size=(self._LABEL_WIDTH, -1))
         self._cmb_port = wx.ComboBox(parent, wx.ID_ANY, style=wx.CB_READONLY)
@@ -98,6 +102,26 @@ class ViewMain(wx.Frame):
 
         return box
 
+    ##########
+    # Public #
+    ##########
+
+    def setup_list_of_serial_ports(self, ports, active_port):
+        self._cmb_port.SetItems(ports)
+        self._cmb_port.SetValue(active_port)
+        self._cmb_port.GetParent().Layout()
+
+    def get_selected_port(self):
+        return self._cmb_port.GetValue()
+
+    def setup_list_of_baudrates(self, baudrates, speed):
+        self._cmb_speed.SetItems(list(map(lambda x: str(x), baudrates)))
+        self._cmb_speed.SetValue(str(speed))
+        self._cmb_speed.GetParent().Layout()
+
+    def get_selected_speed(self):
+        return int(self._cmb_speed.GetValue())
+
 
 if __name__ == '__main__':
 
@@ -105,5 +129,8 @@ if __name__ == '__main__':
 
     frame = ViewMain('ViewMain Test')
     frame.Show()
+
+    frame.setup_list_of_serial_ports(['ham', 'spam', 'bacon'], 'spam')
+    frame.setup_list_of_baudrates([1000, 2000, 3000], 2000)
 
     app.MainLoop()
