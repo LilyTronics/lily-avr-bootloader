@@ -2,9 +2,11 @@
 Main controller.
 """
 
+import time
 import wx
 
 from src.models.application_settings import ApplicationSettings
+from src.models.boot_loader import BootLoader
 from src.models.list_serial_ports import get_available_serial_ports
 from src.models.list_serial_ports import get_available_baud_rates
 from src.views.view_main import ViewMain
@@ -13,6 +15,7 @@ from src.views.view_main import ViewMain
 class ControllerMain(object):
 
     def __init__(self, title):
+        self._boot_loader = None
         self._application_settings = ApplicationSettings()
         self._view = ViewMain(title)
         pos = self._application_settings.get_main_window_position()
@@ -31,11 +34,43 @@ class ControllerMain(object):
             speed = 19200
         self._view.setup_list_of_baudrates(baudrates, speed)
 
+        self._view.Bind(wx.EVT_BUTTON, self._on_connect, id=self._view.ID_BUTTON_CONNECT)
         self._view.Bind(wx.EVT_CLOSE, self._on_view_close)
 
-    ###################
-    # Event handlsers #
-    ###################
+    ###########
+    # Private #
+    ###########
+
+    def _connect(self):
+        self._boot_loader = None
+        try:
+            self._boot_loader = BootLoader(self._view.get_selected_port(), self._view.get_selected_speed())
+            time.sleep(0.5)
+            if not self._boot_loader.activate():
+                raise Exception('Could not activate the bootloader')
+            self._view.set_version_label(self._boot_loader.get_version())
+            self._view.set_device_name_label(self._boot_loader.get_device_name())
+            self._view.set_module_name_label(self._boot_loader.get_module_name())
+            self._view.set_flash_size_label(self._boot_loader.get_flash_size(), self._boot_loader.get_boot_size())
+        except Exception as e:
+            message = 'Could not connect to the bootloader:\n{}'.format(e)
+            with wx.MessageDialog(self._view, message, 'Connect', wx.ICON_EXCLAMATION) as dlg:
+                dlg.ShowModal()
+            self._boot_loader = None
+
+    ##################
+    # Event handlers #
+    ##################
+
+    def _on_connect(self, event):
+        message = 'Make the module ready for activating the boot loader, click OK when ready'
+        with wx.MessageDialog(self._view, message, 'Connect', wx.ICON_INFORMATION) as dlg:
+            if dlg.ShowModal() != wx.ID_OK:
+                return
+
+        wx.CallAfter(self._connect)
+
+        event.Skip()
 
     def _on_view_close(self, event):
         self._application_settings.store_interface_port(self._view.get_selected_port())
@@ -45,6 +80,10 @@ class ControllerMain(object):
             self._application_settings.store_main_window_position(tuple(self._view.GetPosition()))
 
         event.Skip()
+
+    ##########
+    # Public #
+    ##########
 
     def show_view(self):
         self._view.Show()

@@ -33,6 +33,8 @@ class BootLoader(object):
     def __init__(self, port, speed, show_debug=False):
         self._show_debug = show_debug
         self._serial = serial.Serial(port, speed)
+        if self._show_debug:
+            print('Serial port:', self._serial)
 
     def __del__(self):
         try:
