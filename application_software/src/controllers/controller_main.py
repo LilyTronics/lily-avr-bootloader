@@ -63,13 +63,7 @@ class ControllerMain(object):
     ##################
 
     def _on_connect(self, event):
-        message = 'Make the module ready for activating the boot loader, click OK when ready'
-        with wx.MessageDialog(self._view, message, 'Connect', wx.ICON_INFORMATION) as dlg:
-            if dlg.ShowModal() != wx.ID_OK:
-                return
-
         wx.CallAfter(self._connect)
-
         event.Skip()
 
     def _on_view_close(self, event):
