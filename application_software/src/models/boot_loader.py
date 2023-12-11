@@ -193,8 +193,6 @@ if __name__ == '__main__':
                 print('{:17}: failed as expected'.format(label))
                 return 0
 
-        return 1
-
 
     n_failed = 0
 
@@ -219,14 +217,14 @@ if __name__ == '__main__':
     n_failed += _test_command('Set page address', boot_loader.set_page_address, 0x0)
     n_failed += _test_command('Read page', boot_loader.read_page)
 
-    page_data = b'\xff\xcf'
-    while len(page_data) < _MAX_DATA_IN_STRING:
-        page_data += random.randint(0, 255).to_bytes(1, 'big')
+    test_data = b'\xff\xcf'
+    while len(test_data) < _MAX_DATA_IN_STRING:
+        test_data += random.randint(0, 255).to_bytes(1, 'big')
 
-    n_failed += _test_command('Write page', boot_loader.write_page, page_data)
+    n_failed += _test_command('Write page', boot_loader.write_page, test_data)
 
     n_failed += _test_command('Read page', boot_loader.read_page)
-    print('Programmed data  :', _data_to_string(page_data))
+    print('Programmed data  :', _data_to_string(test_data))
 
     n_failed += _test_command('Deactivate', boot_loader.deactivate)
 
