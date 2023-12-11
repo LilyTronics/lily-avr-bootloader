@@ -43,6 +43,10 @@ class ControllerMain(object):
 
     def _connect(self):
         self._boot_loader = None
+        self._view.set_version_label('')
+        self._view.set_device_name_label('')
+        self._view.set_module_name_label('')
+        self._view.set_flash_size_label(0, 0)
         try:
             self._boot_loader = BootLoader(self._view.get_selected_port(), self._view.get_selected_speed())
             time.sleep(0.5)

@@ -125,22 +125,34 @@ class ViewMain(wx.Frame):
         return int(self._cmb_speed.GetValue())
 
     def set_version_label(self, value):
-        self._lbl_version.SetLabel('V{}'.format(value))
+        if value == '':
+            value = '-'
+        else:
+            value = 'V{}'.format(value)
+        self._lbl_version.SetLabel(value)
         wx.YieldIfNeeded()
 
     def set_device_name_label(self, value):
+        if value == '':
+            value = '-'
         self._lbl_device_name.SetLabel(value)
         wx.YieldIfNeeded()
 
     def set_module_name_label(self, value):
+        if value == '':
+            value = '-'
         self._lbl_module_name.SetLabel(value)
         wx.YieldIfNeeded()
 
     def set_flash_size_label(self, total_size, boot_size):
-        available_size = total_size * 1024 - boot_size
-        value = '{}KB ({} Bytes available, boot section: {} Bytes)'.format(total_size, available_size, boot_size)
+        if total_size == 0 or boot_size == 0:
+            value = '-'
+        else:
+            available_size = total_size * 1024 - boot_size
+            value = '{}KB ({} Bytes available, boot section: {} Bytes)'.format(total_size, available_size, boot_size)
         self._lbl_flash_size.SetLabel(value)
         wx.YieldIfNeeded()
+
 
 if __name__ == '__main__':
 
