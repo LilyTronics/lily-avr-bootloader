@@ -29,6 +29,13 @@ class Bootloader {
 // The only place where the bootloader version should be defined
 #define BOOTLOADER_VERSION      1
 
+// Flash size depending on the device (FLASHEND comes from the device io include file)
+#define FLASH_SIZE				(uint16_t)(((uint32_t)FLASHEND + 1) / 1024)
+
+// The amount of bytes the bootloader needs
+#define BOOT_SIZE               4096
+
+
 // Timer 0 (8 bit) is used for:
 // - blinking/flashing LED
 // - boot loader timeout
