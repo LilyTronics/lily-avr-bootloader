@@ -10,10 +10,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bootloader_library", "bootl
 		bootloader_library\bootloader.cpp = bootloader_library\bootloader.cpp
 		bootloader_library\bootloader.h = bootloader_library\bootloader.h
 		bootloader_library\interface.h = bootloader_library\interface.h
-		bootloader_library\readme.txt = bootloader_library\readme.txt
+		bootloader_library\readme.md = bootloader_library\readme.md
 		bootloader_library\uart.cpp = bootloader_library\uart.cpp
 		bootloader_library\uart.h = bootloader_library\uart.h
 	EndProjectSection
+EndProject
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "test_application", "test_application\test_application.cppproj", "{DCE6C7E3-EE26-4D79-826B-08594B9AD897}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +27,10 @@ Global
 		{60BA3D97-1130-49C9-B39C-BCDF6678058C}.Debug|AVR.Build.0 = Debug|AVR
 		{60BA3D97-1130-49C9-B39C-BCDF6678058C}.Release|AVR.ActiveCfg = Release|AVR
 		{60BA3D97-1130-49C9-B39C-BCDF6678058C}.Release|AVR.Build.0 = Release|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Debug|AVR.ActiveCfg = Debug|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Debug|AVR.Build.0 = Debug|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Release|AVR.ActiveCfg = Release|AVR
+		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
