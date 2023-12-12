@@ -10,7 +10,7 @@ class ViewMain(wx.Frame):
     ID_BUTTON_CONNECT = 100
 
     _WINDOW_STYLE = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
-    _INIT_SIZE = (600, 470)
+    _INIT_SIZE = (600, 540)
     _SPACE = 10
     _LABEL_WIDTH = 100
 
@@ -98,9 +98,14 @@ class ViewMain(wx.Frame):
         buttons.Add(btn_read, 0, wx.ALL, self._SPACE)
         buttons.Add(btn_write, 0, wx.ALL, self._SPACE)
 
+        self._lbl_status = wx.StaticText(parent, wx.ID_ANY)
+        self._progress_bar = wx.Gauge(parent, wx.ID_ANY, size=(-1, 20))
+
         box = wx.StaticBoxSizer(wx.StaticBox(parent, wx.ID_ANY, ' Flash programming: '), wx.VERTICAL)
         box.Add(grid, 1, wx.EXPAND | wx.ALL, self._SPACE)
-        box.Add(buttons, 0, self._SPACE)
+        box.Add(buttons, 0)
+        box.Add(self._lbl_status, 0, wx.EXPAND | wx.ALL, self._SPACE)
+        box.Add(self._progress_bar, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, self._SPACE)
 
         return box
 
@@ -112,6 +117,7 @@ class ViewMain(wx.Frame):
         self._cmb_port.SetItems(ports)
         self._cmb_port.SetValue(active_port)
         self._cmb_port.GetParent().Layout()
+        wx.YieldIfNeeded()
 
     def get_selected_port(self):
         return self._cmb_port.GetValue()
@@ -120,6 +126,7 @@ class ViewMain(wx.Frame):
         self._cmb_speed.SetItems(list(map(lambda x: str(x), baudrates)))
         self._cmb_speed.SetValue(str(speed))
         self._cmb_speed.GetParent().Layout()
+        wx.YieldIfNeeded()
 
     def get_selected_speed(self):
         return int(self._cmb_speed.GetValue())
@@ -165,6 +172,17 @@ class ViewMain(wx.Frame):
     def set_flash_verify(self, value):
         self._chk_verify.SetValue(value)
 
+    def set_status_label(self, value):
+        self._lbl_status.SetLabel(value)
+        self._lbl_status.GetParent().Layout()
+        wx.YieldIfNeeded()
+
+    def set_progress(self, value, max_value=0):
+        if max_value > 0:
+            self._progress_bar.SetRange(max_value)
+        self._progress_bar.SetValue(value)
+        wx.YieldIfNeeded()
+
 
 if __name__ == '__main__':
 
@@ -175,5 +193,9 @@ if __name__ == '__main__':
 
     frame.setup_list_of_serial_ports(['ham', 'spam', 'bacon'], 'spam')
     frame.setup_list_of_baudrates([1000, 2000, 3000], 2000)
+
+    frame.set_status_label('Programming page 7 of 34 . . .')
+    frame.set_progress(0, 34)
+    frame.set_progress(7)
 
     app.MainLoop()
