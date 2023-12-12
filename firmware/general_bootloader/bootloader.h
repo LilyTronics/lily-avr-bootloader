@@ -18,7 +18,9 @@ class Bootloader {
             uint8_t led_pin,
             volatile uint8_t* led_ddr,
             volatile uint8_t* led_port,
-            Interface* interface
+            Interface* interface,
+			const char *device_name,
+			const char *module_name
         );
         // Process events
         void process_events(void);

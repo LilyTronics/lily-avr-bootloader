@@ -27,6 +27,8 @@ uint8_t m_rx_data[SPM_PAGESIZE + 4];
 uint8_t m_rx_index;
 uint8_t m_tx_data[SPM_PAGESIZE + 4];
 uint32_t m_active_page_address;
+const char *m_device_name;
+const char *m_module_name;
 
 void process_led(void);
 uint8_t is_flash_empty(void);
@@ -83,7 +85,8 @@ uint8_t default_prog[] = { 0xFF, 0xCF };
 
 
 Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* led_ddr,
-                       volatile uint8_t* led_port, Interface* interface) {
+                       volatile uint8_t* led_port, Interface* interface, const char *device_name,
+					   const char *module_name) {
     TCCR0B = (1 << CS02);
     TIFR0  = (1 << TOV0);
 
@@ -107,11 +110,13 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
     m_com_timeout_counter = 0;
 
     m_interface = interface;
-
+	
+	m_device_name = device_name;
+	m_module_name = module_name;
+	
     m_rx_index = 0;
-
     m_active_page_address = 0;
-
+		
     if (is_flash_empty()) {
         // Program default prog
         program_page(default_prog, 2, 0);
@@ -317,24 +322,34 @@ uint8_t get_version(void) {
 
 
 uint8_t get_device_name(void) {
-    uint16_t data_size = strlen(DEVICE_NAME);
+    uint16_t data_size = 0;
+	while (1) {
+		char c = pgm_read_byte(m_device_name + data_size);
+		if (c == 0) {
+			break;
+		}
+		m_tx_data[4 + data_size] = c;
+		data_size++;
+	}
     m_tx_data[2] = HIGH(data_size);
     m_tx_data[3] = LOW(data_size);
-    for (uint16_t i = 0; i < data_size; i++) {
-        m_tx_data[4 + i] = DEVICE_NAME[0 + i];
-    }
     return 1;
 }
 
 
 uint8_t get_module_name(void) {
-    uint16_t data_size = strlen(MODULE_NAME);
-    m_tx_data[2] = HIGH(data_size);
-    m_tx_data[3] = LOW(data_size);
-    for (uint16_t i = 0; i < data_size; i++) {
-        m_tx_data[4 + i] = MODULE_NAME[0 + i];
-    }
-    return 1;
+	uint16_t data_size = 0;
+	while (1) {
+		char c = pgm_read_byte(m_module_name + data_size);
+		if (c == 0) {
+			break;
+		}
+		m_tx_data[4 + data_size] = c;
+		data_size++;
+	}
+	m_tx_data[2] = HIGH(data_size);
+	m_tx_data[3] = LOW(data_size);
+	return 1;
 }
 
 
