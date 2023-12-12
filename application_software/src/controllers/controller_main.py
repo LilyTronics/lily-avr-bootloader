@@ -1,7 +1,8 @@
 """
 Main controller.
 """
-import os.path
+
+import os
 import time
 import wx
 
