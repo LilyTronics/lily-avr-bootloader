@@ -27,7 +27,11 @@ class BootLoader(object):
 
     _CMD_ERROR = 0xFF
 
-    _RX_TIME_OUT = 3
+    _RX_TIMEOUT = 2.0
+    _ACTIVATE_TIMEOUT = 0.5
+    _ACTIVATE_INTERVAL = 0.5
+    _ACTIVATE_TRIES = 5
+
     _MAX_DEBUG_DATA_LENGTH = 20
 
     def __init__(self, port, speed, show_debug=False):
@@ -64,7 +68,7 @@ class BootLoader(object):
         if self._show_debug:
             print('RX <- {}'.format(self._packet_to_hex_string(packet)))
 
-    def _send_receive(self, command, data=b''):
+    def _send_receive(self, command, data=b'', rx_timeout=_RX_TIMEOUT):
         packet = b''
         packet += self._CMD_START.to_bytes(1, 'big')
         packet += command.to_bytes(1, 'big')
@@ -75,8 +79,9 @@ class BootLoader(object):
 
         start = time.time()
         rx_data = b''
-        while (time.time() - start) < self._RX_TIME_OUT:
+        while (time.time() - start) < rx_timeout:
             while self._serial.in_waiting > 0:
+                start = time.time()
                 rx_data += self._serial.read(self._serial.in_waiting)
 
             # Analyse packet
@@ -97,8 +102,15 @@ class BootLoader(object):
         return rx_data
 
     def activate(self):
-        result = self._send_receive(self._CMD_ACTIVATE)
-        return self._invert_byte(result[1]) == self._CMD_ACTIVATE
+        for i in range(self._ACTIVATE_TRIES):
+            try:
+                result = self._send_receive(self._CMD_ACTIVATE, rx_timeout=self._ACTIVATE_TIMEOUT)
+                if self._invert_byte(result[1]) == self._CMD_ACTIVATE:
+                    return True
+            except (Exception,):
+                pass
+            time.sleep(self._ACTIVATE_INTERVAL)
+        return False
 
     def deactivate(self):
         result = self._send_receive(self._CMD_DEACTIVATE)
@@ -197,7 +209,6 @@ if __name__ == '__main__':
     n_failed = 0
 
     boot_loader = BootLoader('COM19', 115200, True)
-    time.sleep(1)
 
     n_failed += _test_command('Activate', boot_loader.activate)
     time.sleep(1)
