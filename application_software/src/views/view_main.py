@@ -153,6 +153,18 @@ class ViewMain(wx.Frame):
         self._lbl_flash_size.SetLabel(value)
         wx.YieldIfNeeded()
 
+    def get_flash_filename(self):
+        return self._filename.GetPath()
+
+    def set_flash_filename(self, filename):
+        self._filename.SetPath(filename)
+
+    def get_flash_verify(self):
+        return self._chk_verify.GetValue()
+
+    def set_flash_verify(self, value):
+        self._chk_verify.SetValue(value)
+
 
 if __name__ == '__main__':
 

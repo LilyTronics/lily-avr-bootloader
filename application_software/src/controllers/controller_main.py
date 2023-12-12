@@ -1,7 +1,7 @@
 """
 Main controller.
 """
-
+import os.path
 import time
 import wx
 
@@ -33,6 +33,11 @@ class ControllerMain(object):
         if speed not in baudrates:
             speed = 19200
         self._view.setup_list_of_baudrates(baudrates, speed)
+
+        filename = self._application_settings.get_flash_filename()
+        if os.path.isfile(filename):
+            self._view.set_flash_filename(filename)
+        self._view.set_flash_verify(self._application_settings.get_flash_verify())
 
         self._view.Bind(wx.EVT_BUTTON, self._on_connect, id=self._view.ID_BUTTON_CONNECT)
         self._view.Bind(wx.EVT_CLOSE, self._on_view_close)
@@ -73,6 +78,10 @@ class ControllerMain(object):
     def _on_view_close(self, event):
         self._application_settings.store_interface_port(self._view.get_selected_port())
         self._application_settings.store_interface_speed(self._view.get_selected_speed())
+        filename = self._view.get_flash_filename()
+        if os.path.isfile(filename):
+            self._application_settings.store_flash_filename(filename)
+        self._application_settings.store_flash_verify(self._view.get_flash_verify())
 
         if not self._view.IsIconized():
             self._application_settings.store_main_window_position(tuple(self._view.GetPosition()))
