@@ -36,7 +36,7 @@ Create a main.cpp file for your target and add the bootloader library files:
 	    );
         
         while (1) {
-		    bootloader.process_events();                   // Process bootloader events, like timer overflow and UART.
+			bootloader.process_events();                   // Process bootloader events, like timer overflow and UART.
 	    }
     }
 
