@@ -12,7 +12,6 @@
  *
  */
 
-#include <avr/io.h>
 #include <avr/pgmspace.h>
 #include "interfaces/uart.h"
 #include "bootloader.h"
