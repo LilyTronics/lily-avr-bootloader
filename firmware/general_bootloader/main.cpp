@@ -13,9 +13,16 @@
  */
 
 #include <avr/io.h>
+#include <avr/pgmspace.h>
 #include "interfaces/uart.h"
 #include "bootloader.h"
-#include "device_info.h"
+
+
+#define SYS_CLOCK               16000000
+#define BAUD_RATE               115200
+
+const char DEVICE_NAME[] PROGMEM = "ATmega328P";
+const char MODULE_NAME[] PROGMEM = "Arduino Uno R3";
 
 
 int main(void) {
@@ -26,7 +33,9 @@ int main(void) {
         PORTB5,
         &DDRB,
         &PORTB,
-        &uart
+        &uart,
+		DEVICE_NAME,
+		MODULE_NAME
     );
 
     while (1) {

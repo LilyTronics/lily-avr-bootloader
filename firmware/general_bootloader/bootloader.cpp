@@ -3,7 +3,6 @@
  */
 
 #include "bootloader.h"
-#include "device_info.h"
 #include <avr/boot.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
