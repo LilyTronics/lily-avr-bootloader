@@ -78,10 +78,6 @@ COMMAND_ENTRY m_commands[] = {
     { 0x00, 0               }           // End of list
 };
 
-// Default program when flash is empty
-// start:  RJMP start   (endless loop)
-uint8_t default_prog[] = { 0xFF, 0xCF };
-
 
 Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* led_ddr,
                        volatile uint8_t* led_port, Interface* interface, const char *device_name,
@@ -115,12 +111,6 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 	
     m_rx_index = 0;
     m_active_page_address = 0;
-		
-    if (is_flash_empty()) {
-        // Program default prog
-        program_page(default_prog, 2, 0);
-    }
-
 }
 
 
@@ -238,6 +228,11 @@ void process_led(void) {
 
 void run_main_application(void) {
     *m_led_port &= ~(1 << m_led_pin);
+	if (is_flash_empty()) {
+		// Just hang here if the flash is empty
+		while (1);		    
+	}
+	// Jump to the start of the flash
     asm("JMP 0");
 }
 
