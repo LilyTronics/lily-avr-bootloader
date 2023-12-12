@@ -23,9 +23,9 @@ uint16_t m_boot_timeout_counter;
 uint16_t m_com_timeout_counts;
 uint16_t m_com_timeout_counter;
 Interface* m_interface;
-uint8_t m_rx_data[PAGE_SIZE + 4];
+uint8_t m_rx_data[SPM_PAGESIZE + 4];
 uint8_t m_rx_index;
-uint8_t m_tx_data[PAGE_SIZE + 4];
+uint8_t m_tx_data[SPM_PAGESIZE + 4];
 uint32_t m_active_page_address;
 
 void process_led(void);
@@ -259,7 +259,7 @@ void program_page(uint8_t* page_data, uint8_t data_count, uint8_t offset) {
 
     page_data += offset;
     // Page is filled per two bytes
-    for (uint16_t i = 0; i < PAGE_SIZE; i += 2) {
+    for (uint16_t i = 0; i < SPM_PAGESIZE; i += 2) {
         // Little-endian word, padding with empty data in case buffer is not a complete page
         uint16_t data_word = 0;
         if (data_count > 0) {
@@ -356,8 +356,8 @@ uint8_t get_flash_size(void) {
 
 uint8_t get_page_size(void) {
      m_tx_data[3] = 2;
-     m_tx_data[4] = HIGH(PAGE_SIZE);
-     m_tx_data[5] = LOW(PAGE_SIZE);
+     m_tx_data[4] = HIGH(SPM_PAGESIZE);
+     m_tx_data[5] = LOW(SPM_PAGESIZE);
      return 1;
 }
 
@@ -374,9 +374,9 @@ uint8_t set_page_address(void) {
 
 
 uint8_t read_page(void) {
-    m_tx_data[2] = HIGH(PAGE_SIZE);
-    m_tx_data[3] = LOW(PAGE_SIZE);
-    for (uint16_t i = 0; i < PAGE_SIZE; i++) {
+    m_tx_data[2] = HIGH(SPM_PAGESIZE);
+    m_tx_data[3] = LOW(SPM_PAGESIZE);
+    for (uint16_t i = 0; i < SPM_PAGESIZE; i++) {
         m_tx_data[4 + i] = pgm_read_byte(m_active_page_address + i);
     }
     return 1;
