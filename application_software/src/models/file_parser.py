@@ -44,7 +44,7 @@ def _parse_hex_file(filename):
                 # Data record
                 # Check the checksum, if we sum all data including the checksum, the 8-bit result should be zero
                 if sum(record_data) & 255 != 0:
-                    raise Exception('Check sum error in record:\n{}'.format(line))
+                    raise Exception('Checksum error in record:\n{}'.format(line))
                 n_bytes = record_data[0]
                 if len(record_data) != n_bytes + 5:
                     raise Exception('Record length is not matching the number of bytes.\n{}'.format(line))
