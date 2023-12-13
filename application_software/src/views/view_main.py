@@ -8,6 +8,8 @@ import wx
 class ViewMain(wx.Frame):
 
     ID_BUTTON_CONNECT = 100
+    ID_BUTTON_READ = 101
+    ID_BUTTON_WRITE = 102
 
     _WINDOW_STYLE = wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
     _INIT_SIZE = (600, 540)
@@ -91,8 +93,8 @@ class ViewMain(wx.Frame):
         grid.Add(self._chk_verify, (1, 1), wx.DefaultSpan, wx.ALIGN_CENTER_VERTICAL)
         grid.AddGrowableCol(1)
 
-        btn_read = wx.Button(parent, wx.ID_ANY, 'Read')
-        btn_write = wx.Button(parent, wx.ID_ANY, 'Write')
+        btn_read = wx.Button(parent, self.ID_BUTTON_READ, 'Read')
+        btn_write = wx.Button(parent, self.ID_BUTTON_WRITE, 'Write')
 
         buttons = wx.BoxSizer(wx.HORIZONTAL)
         buttons.Add(btn_read, 0, wx.ALL, self._SPACE)
