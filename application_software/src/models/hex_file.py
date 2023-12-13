@@ -10,19 +10,13 @@ _DEFAULT_RESULT = {
     'flash_data': b''
 }
 
+_MAX_BYTES_PER_RECORD = 0x10
 
-def parse_file(filename):
+
+def read_hex_file(filename):
     if not os.path.isfile(filename):
         raise Exception('The file does not exist.\n{}'.format(filename))
-    if filename.endswith('.hex'):
-        result = _parse_hex_file(filename)
-    else:
-        raise Exception('The file format is not supported.')
 
-    return result
-
-
-def _parse_hex_file(filename):
     result = _DEFAULT_RESULT.copy()
     with open(filename, 'r') as fp:
         while True:
@@ -58,12 +52,32 @@ def _parse_hex_file(filename):
     return result
 
 
+def write_hex_file(filename, data, start_address):
+    address = start_address
+    with open(filename, 'w') as fp:
+        i = 0
+        while i < len(data):
+            record = b''
+            n_bytes = _MAX_BYTES_PER_RECORD
+            if len(data[i:]) < _MAX_BYTES_PER_RECORD:
+                n_bytes = len(data[i:])
+            record += n_bytes.to_bytes(1, 'big')
+            record += (i + address).to_bytes(2, 'big')
+            record += b'\x00'
+            record += data[i:i + n_bytes]
+            crc = (~sum(record) + 1) & 0xFF
+            record += crc.to_bytes(1, 'big')
+            fp.write(':{}\n'.format(record.hex().upper()))
+            i += n_bytes
+        # Write end of file record
+        fp.write(':00000001FF\n')
+
+
 if __name__ == '__main__':
 
-    files_to_parse = [
-        '..\\..\\..\\firmware\\test_application\\Debug\\test_application.hex'
-    ]
+    test_filename = '..\\..\\..\\firmware\\test_application\\Debug\\test_application.hex'
+    parser_result = read_hex_file(test_filename)
+    print(parser_result)
 
-    for file_to_parse in files_to_parse:
-        parser_result = parse_file(file_to_parse)
-        print(parser_result)
+    test_filename = test_filename.replace('.hex', '_1.hex')
+    write_hex_file(test_filename, parser_result['flash_data'][:-8], parser_result['start_address'])
