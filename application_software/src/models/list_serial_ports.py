@@ -25,7 +25,7 @@ def get_available_serial_ports():
     if len(ports) == 0:
         ports.append('no ports')
 
-    return ports
+    return sorted(ports)
 
 
 def get_available_baud_rates():
