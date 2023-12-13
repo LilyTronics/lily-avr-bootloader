@@ -73,9 +73,9 @@ class ControllerMain(object):
     def _read_flash(self):
         title = 'Read FLASH'
 
-        with wx.FileDialog(self._view, title, style=wx.FD_SAVE) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                filename = dlg.GetPath()
+        with wx.FileDialog(self._view, title, style=wx.FD_SAVE) as save_dlg:
+            if save_dlg.ShowModal() == wx.ID_OK:
+                filename = save_dlg.GetPath()
                 if not filename.endswith('.hex'):
                     filename += '.hex'
 
