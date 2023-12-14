@@ -84,15 +84,15 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
 					   const char *module_name) {
     TCCR0B = (1 << CS02);
     TIFR0  = (1 << TOV0);
-	
+
 	m_led_pin = led_pin;
 	m_led_port = led_port;
-	
+
 	if (m_led_pin > 0) {
 		*led_ddr |= (1 << led_pin);
 		*led_port |= (1 << led_pin);
 	}
-    
+
     m_led_blink_counts = sys_clock / LED_BLINK_DIV;
     m_led_flash_on_counts = sys_clock / LED_FLASH_ON_DIV;
     m_led_flash_off_counts = (sys_clock / TIMER_DIV) - m_led_flash_on_counts;
@@ -108,10 +108,10 @@ Bootloader::Bootloader(uint32_t sys_clock, uint8_t led_pin, volatile uint8_t* le
     m_com_timeout_counter = 0;
 
     m_interface = interface;
-	
+
 	m_device_name = device_name;
 	m_module_name = module_name;
-	
+
     m_rx_index = 0;
     m_active_page_address = 0;
 }
@@ -143,7 +143,7 @@ void Bootloader::process_events(void) {
                 run_main_application();
             }
         }
-		
+
 		if (m_led_pin > 0) {
 			process_led();
 		}
@@ -235,7 +235,7 @@ void run_main_application(void) {
     *m_led_port &= ~(1 << m_led_pin);
 	if (is_flash_empty()) {
 		// Just hang here if the flash is empty
-		while (1);		    
+		while (1);
 	}
 	// Jump to the start of the flash
     asm("JMP 0");
@@ -244,7 +244,7 @@ void run_main_application(void) {
 
 uint8_t is_flash_empty(void) {
     // Check first 8 bytes at least one of them should not be 0xFF when programmed
-    for (uint8_t i = 0; i < 8; i++) {
+    for (uint16_t i = 0; i < 8; i++) {
         if (pgm_read_byte(i) != 0xFF) {
             return 0;
         }
