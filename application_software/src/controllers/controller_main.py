@@ -2,12 +2,14 @@
 Main controller.
 """
 
+import math
 import os
 import time
 import wx
 
 from src.models.application_settings import ApplicationSettings
 from src.models.boot_loader import BootLoader
+from src.models.hex_file import read_hex_file
 from src.models.hex_file import write_hex_file
 from src.models.list_serial_ports import get_available_serial_ports
 from src.models.list_serial_ports import get_available_baud_rates
@@ -43,6 +45,7 @@ class ControllerMain(object):
 
         self._view.Bind(wx.EVT_BUTTON, self._on_connect, id=self._view.ID_BUTTON_CONNECT)
         self._view.Bind(wx.EVT_BUTTON, self._on_flash_read, id=self._view.ID_BUTTON_READ)
+        self._view.Bind(wx.EVT_BUTTON, self._on_flash_write, id=self._view.ID_BUTTON_WRITE)
         self._view.Bind(wx.EVT_CLOSE, self._on_view_close)
 
     ###########
@@ -50,7 +53,9 @@ class ControllerMain(object):
     ###########
 
     def _connect(self):
-        self._boot_loader = None
+        if self._boot_loader is not None:
+            return True
+
         self._view.set_version_label('')
         self._view.set_device_name_label('')
         self._view.set_module_name_label('')
@@ -70,6 +75,30 @@ class ControllerMain(object):
                 dlg.ShowModal()
             self._boot_loader = None
 
+        return self._boot_loader is not None
+
+    def _read_data_from_flash(self, start_address, n_pages, page_size, title):
+        address = start_address
+        flash_data = b''
+        self._view.set_progress(0, n_pages)
+        try:
+            for i in range(1, n_pages + 1):
+                self._view.set_status_label('Reading page {} of {}'.format(i, n_pages))
+                self._boot_loader.set_page_address(address)
+                flash_data += self._boot_loader.read_page()
+                address += page_size
+                self._view.set_progress(i)
+                i += 1
+        except Exception as e:
+            message = 'Error reading data from FLASH:\n{}'.format(e)
+            with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
+                dlg.ShowModal()
+            self._view.set_progress(0)
+            self._view.set_status_label('Error reading FLASH')
+            flash_data = b''
+
+        return flash_data
+
     def _read_flash(self):
         title = 'Read FLASH'
 
@@ -79,32 +108,15 @@ class ControllerMain(object):
                 if not filename.endswith('.hex'):
                     filename += '.hex'
 
-                if self._boot_loader is None:
-                    self._connect()
-                if self._boot_loader is None:
+                if not self._connect():
                     return
 
                 flash_size = self._boot_loader.get_flash_size() * 1024
                 page_size = self._boot_loader.get_page_size()
                 n_pages = int(flash_size / page_size)
 
-                address = 0
-                flash_data = b''
-                self._view.set_progress(0, n_pages)
-                try:
-                    for i in range(1, n_pages + 1):
-                        self._view.set_status_label('Reading page {} of {}'.format(i, n_pages))
-                        self._boot_loader.set_page_address(address)
-                        flash_data += self._boot_loader.read_page()
-                        address += page_size
-                        self._view.set_progress(i)
-                        i += 1
-                except Exception as e:
-                    message = 'Error reading data from FLASH:\n{}'.format(e)
-                    with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
-                        dlg.ShowModal()
-                    self._view.set_progress(0)
-                    self._view.set_status_label('Error reading FLASH')
+                flash_data = self._read_data_from_flash(0, n_pages, page_size, title)
+                if len(flash_data) == 0:
                     return
 
                 try:
@@ -128,6 +140,76 @@ class ControllerMain(object):
                     self._view.set_status_label('Error writing data to file')
                 self._view.set_progress(0)
 
+    def _write_flash(self):
+        title = 'Write FLASH'
+        filename = self._view.get_flash_filename()
+        do_verify = self._view.get_flash_verify()
+        try:
+            flash_data = read_hex_file(filename)
+        except Exception as e:
+            message = 'Could not read the file:\n{}\n{}'.format(filename, e)
+            with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
+                dlg.ShowModal()
+            return
+
+        if not self._connect():
+            return
+
+        boot_size = self._boot_loader.get_boot_size()
+        flash_size = self._boot_loader.get_flash_size() * 1024 - boot_size
+        page_size = self._boot_loader.get_page_size()
+
+        if len(flash_data['flash_data']) > flash_size:
+            message = 'Too much data in the file:\n{} bytes in file, {} bytes available in FLASH'.format(
+                len(flash_data['flash_data']), flash_size
+            )
+            with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
+                dlg.ShowModal()
+            return
+
+        n_pages = math.ceil(len(flash_data['flash_data']) / page_size)
+        address = flash_data['start_address']
+        self._view.set_progress(0, n_pages)
+        try:
+            for i in range(1, n_pages + 1):
+                self._view.set_status_label('Writing page {} of {}'.format(i, n_pages))
+                self._boot_loader.set_page_address(address)
+                self._boot_loader.write_page(flash_data['flash_data'][address:address + page_size])
+                address += page_size
+                self._view.set_progress(i)
+                i += 1
+        except Exception as e:
+            message = 'Error writing data to FLASH:\n{}'.format(e)
+            with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
+                dlg.ShowModal()
+            self._view.set_progress(0)
+            self._view.set_status_label('Error writing FLASH')
+            return
+
+        if do_verify:
+            read_data = self._read_data_from_flash(flash_data['start_address'], n_pages, page_size, title)
+            if len(read_data) == 0:
+                return
+
+            if len(read_data) < len(flash_data['flash_data']):
+                message = 'Amount of read data is not matching the amount of programmed data.'
+                with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
+                    dlg.ShowModal()
+                self._view.set_status_label('Error writing FLASH')
+                self._view.set_progress(0)
+                return
+
+            if read_data[:len(flash_data['flash_data'])] != flash_data['flash_data']:
+                message = 'Read data is not matching the programmed data.'
+                with wx.MessageDialog(self._view, message, title, wx.ICON_EXCLAMATION) as dlg:
+                    dlg.ShowModal()
+                self._view.set_status_label('Error writing FLASH')
+                self._view.set_progress(0)
+                return
+
+        self._view.set_status_label('Writing FLASH finished')
+        self._view.set_progress(0)
+
     ##################
     # Event handlers #
     ##################
@@ -138,6 +220,10 @@ class ControllerMain(object):
 
     def _on_flash_read(self, event):
         wx.CallAfter(self._read_flash)
+        event.Skip()
+
+    def _on_flash_write(self, event):
+        wx.CallAfter(self._write_flash)
         event.Skip()
 
     def _on_view_close(self, event):
